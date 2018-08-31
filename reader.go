@@ -13,6 +13,7 @@ import (
 	"github.com/pagalguy/ds_to_json/google"
 	pb "github.com/pagalguy/ds_to_json/google/pb"
 	"github.com/syndtr/goleveldb/leveldb/journal"
+	"google.golang.org/appengine"
 )
 
 type JSONChan chan *map[string]interface{}
@@ -86,6 +87,7 @@ func ReadDatastoreFile(path string, jsonChan JSONChan, errChan ErrorChan) error 
 	return nil
 }
 
+// converts protobuf entity to a generic json struct
 func convertProtoToJSON(protoObj *pb.EntityProto) (*map[string]interface{}, error) {
 
 	// extract the key first
@@ -129,6 +131,7 @@ func mkKeyJson(key google.Key) *map[string]interface{} {
 	return &keyJson
 }
 
+// converts a protobuf property to a serializable value
 func protoValueToJsonValue(prop *google.Property) interface{} {
 
 	switch prop.Value.(type) {
@@ -148,6 +151,13 @@ func protoValueToJsonValue(prop *google.Property) interface{} {
 	case time.Time:
 		timeVal := prop.Value.(time.Time)
 		return timeVal.UnixNano() / int64(time.Millisecond)
+	case appengine.GeoPoint:
+		geo := prop.Value.(appengine.GeoPoint)
+		geoJson := map[string]float64{
+			"lat": geo.Lat,
+			"lon": geo.Lng,
+		}
+		return geoJson
 	case nil:
 		return nil
 	default:
