@@ -135,11 +135,22 @@ func mkKeyJson(key google.Key) *map[string]interface{} {
 func protoValueToJsonValue(prop *google.Property) interface{} {
 
 	switch prop.Value.(type) {
-	case int64:
-	case float64:
-	case bool:
-	case string:
+	case int, int64, float64, bool:
 		return prop.Value
+	case string:
+		nestedStruct := &pb.EntityProto{}
+		err := proto.Unmarshal([]byte(prop.Value.(string)), nestedStruct)
+		if err != nil {
+			return prop.Value
+		} else {
+			nestedJson, err := convertProtoToJSON(nestedStruct)
+			if err != nil {
+				return prop.Value
+			} else {
+				return nestedJson
+			}
+		}
+
 	case *google.Key:
 		return mkKeyJson(*prop.Value.(*google.Key))
 	case []byte:
