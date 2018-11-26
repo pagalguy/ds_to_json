@@ -21,7 +21,7 @@ ds_to_json {entity backup folder path} {output folder path}
 ```
 
 ## Assumptions
-- In your output folder does not exist, the script will create it. Ensure that the script has write access to the path
+- If your output folder does not exist, the script will create it. Ensure that the script has write access to the path
 - CAUTION If the output folder already has content, this script will delete all files in it. This will be changed in future, to make it an optional flag
 - The script uses workers to parallely convert files to JSON.
 - The JSON output files will be of format `converted-{x}.json`
