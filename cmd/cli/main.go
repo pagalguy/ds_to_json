@@ -34,8 +34,8 @@ func CrawlAndConvert(srcDir, destDir string) {
 
 	var syncWg sync.WaitGroup
 
-	//# of workers = cpu core count - 1 for the main go routine.
-	numWorkers := int(math.Max(1.0, float64(runtime.NumCPU()-1)))
+	//# of workers = cpu core count. no spare for the main go routine.
+	numWorkers := int(math.Max(1.0, float64(runtime.NumCPU())))
 
 	// distribute the files among workers
 	log.Printf("Starting %d workers...", numWorkers)
@@ -64,8 +64,10 @@ func RunWorker(workerNum int, srcFiles []string, destDir string) error {
 
 	go func() {
 		for _, file := range srcFiles {
-			log.Printf("[Worker #%d] Reading %s", workerNum, file)
-			err := ds_to_json.ReadDatastoreFile(file, jsonChan, errChan)
+			// log.Printf("[Worker #%d] Reading %s", workerNum, file)
+			linesCount, err := ds_to_json.ReadDatastoreFile(file, jsonChan, errChan)
+			log.Printf("[Worker #%d] Completed %s with %d lines", workerNum, file, linesCount)
+
 			if err != nil {
 				log.Printf("Error while reading file - %s: %v", file, err)
 				continue
@@ -73,6 +75,9 @@ func RunWorker(workerNum int, srcFiles []string, destDir string) error {
 		}
 		close(jsonChan)
 		close(errChan)
+
+		log.Printf("Total lines read from datastore backups %d", ds_to_json.TotalLinesRead)
+
 	}()
 
 	// JSON objects writing subroutine
@@ -88,6 +93,7 @@ func RunWorker(workerNum int, srcFiles []string, destDir string) error {
 		}
 
 		jsonWriter := bufio.NewWriter(destJSONFile)
+		rowsCount := 0
 
 		for destJSON := range jsonChan {
 			serialized, err := json.Marshal(destJSON)
@@ -95,10 +101,12 @@ func RunWorker(workerNum int, srcFiles []string, destDir string) error {
 				log.Fatalf("Error while serialzing JSON %v \n %v", destJSON, err)
 			}
 			fmt.Fprintln(jsonWriter, string(serialized))
+			rowsCount += 1
 		}
 
-		log.Printf("[Worker #%d] Completed writing JSON objects to %s", workerNum, jsonFilename)
+		log.Printf("[Worker #%d] Completed writing %d JSON objects to %s", workerNum, rowsCount, jsonFilename)
 
+		jsonWriter.Flush()
 		workerWg.Done()
 	}()
 
@@ -134,6 +142,7 @@ func RunWorker(workerNum int, srcFiles []string, destDir string) error {
 
 		log.Printf("[Worker #%d] Completed writing error objects to %s", workerNum, errFilename)
 
+		errWriter.Flush()
 		workerWg.Done()
 
 	}()
