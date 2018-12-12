@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -25,6 +26,9 @@ type ReadError struct {
 	Line    int
 }
 
+var TotalLinesRead int = 0
+var CountMutex sync.Mutex
+
 func NewReadError(msg, file string, line int) ReadError {
 	return ReadError{
 		Message: msg,
@@ -38,12 +42,12 @@ func (e *ReadError) Error() string {
 }
 
 // reads datastore backup file from path converts each entity into a JSON and outputs
-// to a channels
-func ReadDatastoreFile(path string, jsonChan JSONChan, errChan ErrorChan) error {
+// to a channels. returns the total number of entries read from the backup file
+func ReadDatastoreFile(path string, jsonChan JSONChan, errChan ErrorChan) (int, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer f.Close()
 
@@ -82,9 +86,12 @@ func ReadDatastoreFile(path string, jsonChan JSONChan, errChan ErrorChan) error 
 		jsonChan <- jsonObj
 		lineNo += 1
 
+		CountMutex.Lock()
+		TotalLinesRead += 1
+		CountMutex.Unlock()
 	}
 
-	return nil
+	return lineNo, nil
 }
 
 // converts protobuf entity to a generic json struct

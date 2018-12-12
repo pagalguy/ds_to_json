@@ -2,29 +2,36 @@
 
 
 [[projects]]
+  digest = "1:97df918963298c287643883209a2c3f642e6593379f97ab400c2a2e219ab647d"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
+  pruneopts = "UT"
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:58a4752f5e0dd60ccb47550392dc8f73a9de478cfd6d2d2f2febbc3557624400"
   name = "github.com/syndtr/goleveldb"
   packages = [
     "leveldb/errors",
     "leveldb/journal",
     "leveldb/storage",
-    "leveldb/util"
+    "leveldb/util",
   ]
+  pruneopts = "UT"
   revision = "ae2bd5eed72d46b28834ec3f60db3a3ebedd8dbd"
 
 [[projects]]
   branch = "master"
+  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
   name = "golang.org/x/net"
   packages = ["context"]
+  pruneopts = "UT"
   revision = "8a410e7b638dca158bf9e766925842f6651ff828"
 
 [[projects]]
+  digest = "1:7cba2f7dcbf28654c8847e3e030c0fd64c02e03306c61780cf8fa9ff7fa89d80"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -34,14 +41,19 @@
     "internal/datastore",
     "internal/log",
     "internal/modules",
-    "internal/remote_api"
+    "internal/remote_api",
   ]
+  pruneopts = "UT"
   revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
   version = "v1.1.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "435bb955d6b300dce9b8b2d3af24ed5f1025eacf31b6eb47d651a6ffc9c672e2"
+  input-imports = [
+    "github.com/golang/protobuf/proto",
+    "github.com/syndtr/goleveldb/leveldb/journal",
+    "google.golang.org/appengine",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
