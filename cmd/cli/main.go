@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -96,10 +97,17 @@ func RunWorker(workerNum int, srcFiles []string, destDir string) error {
 		rowsCount := 0
 
 		for destJSON := range jsonChan {
-			serialized, err := json.Marshal(destJSON)
+
+			// use custom encoder to not escape HTML <, > and &
+			serialized, err := JSONMarshal(destJSON)
+
 			if err != nil {
 				log.Fatalf("Error while serialzing JSON %v \n %v", destJSON, err)
 			}
+
+			// remove empty bytes
+			serialized = bytes.Trim(serialized, "\x00")
+
 			fmt.Fprintln(jsonWriter, string(serialized))
 			rowsCount += 1
 		}
@@ -170,6 +178,15 @@ func chunk(list []string, max int) [][]string {
 
 	return chunked
 
+}
+
+/// Custom encoding that does not escape the HTML content
+func JSONMarshal(t interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(t)
+	return buffer.Bytes(), err
 }
 
 func main() {
